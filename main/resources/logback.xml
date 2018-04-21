@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- scan默认为true，配置文件发生改变，则日志文件跟着更改 -->
+<!-- scanPeriod日志文件扫描配置文件的间隔时间，每隔60秒扫描一次配置文件 -->
+<!-- debug的作用是打印出logback日志内部的信息，查看 logback运行状态。我们不需要故设为false -->
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+	
+	<!-- 定义参数常量 -->
+	<!--日志输出级别 trace<debug<info<warn<error，
+	当设为debug时，则小于debug的级别不会显示，
+	只会显示logger.info、logger.warn、logger.error中的内容 
+	如：显示logger.debug("msg")-->
+	<!-- 我们一般使用debug.log、info.log、error.log三个日志文件 -->
+	<property name="log.level" value="debug" />
+	<!-- 文件保留时间 30天 -->
+	<property name="log.maxHistory" value="30" />
+	<!-- 日志文件存储的根路径 -->
+	<property name="log.filePath" value="${catalina.base}/logs/webapps" />
+	<!-- 日志展现格式 -->
+	<!-- 定义时间格式，[%thead]定义使用的是哪个线程，%-5level输出是哪个级别日志，
+	 %logger{50} -%msg输出哪个package中的哪个类的信息，%n换行 -->
+	<property name="log.pattern"
+		value="%d{yyyy-MM-dd HH:mm:ss:SSS} [%thread] %-5level %logger{50} -%msg%n" />
+
+	
+	<!-- 控制台日志输出设置 -->
+	<!-- 定义logback标签 -->
+
+	<!-- appender指定日志输出的目的地，也就是输出媒介，可以是控制台可以是服务器等 -->
+	<appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+		<!-- 类似layout,但是 encoder既负责将日志文件转换成字符串也负责将日志信息写到对应的文件当中 -->
+		<encoder>
+			<!-- 定义日志输出格式 -->
+			<pattern>${log.pattern}</pattern>
+		</encoder>
+	</appender>
+	
+	
+	<!-- 日志文件输出设置 -->
+	<!-- debug.log日志文件-->
+	<!-- 日志级别 -->
+	<!-- 以滚动形式刷新日志新信息 -->
+	<appender name="debugAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+	<!-- 标明文件路径 -->
+	<file>${log.filePath}/debug.log</file>
+	<!-- 滚动策略 -->
+	<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+		<!-- 设置文件名称生成格式 --> 
+		<fileNamePattern>${log.filePath}/debug/debug.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+	<!-- 文件最大保存历史数量-->
+	<maxHistory>${log.maxHistory}</maxHistory>
+	</rollingPolicy>
+	<encoder>
+		<pattern>${log.pattern}</pattern>
+	</encoder>
+	<!-- 定义过滤器，过滤不是debuglevel的日志文件 -->
+	<filter class="ch.qos.logback.classic.filter.LevelFilter">
+		<level>DEBUG</level>
+		<!-- 如果是debug日志信息则留下来 -->
+		<onMatch>ACCEPT</onMatch>
+		<!-- 如果不是日志信息则直接过滤掉 -->
+		<onMismatch>DENY</onMismatch>
+	</filter>
+	</appender>
+	
+	<!-- INFO -->
+	<!-- 日志级别 -->
+	<appender name="infoAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+	<!-- 标明文件路径 -->
+	<file>${log.filePath}/info.log</file>
+	<!-- 滚动策略 -->
+	<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+		<!-- 设置文件名称生成格式 --> 
+		<fileNamePattern>${log.filePath}/info/info.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+	<!-- 文件最大保存历史数量-->
+	<maxHistory>${log.maxHistory}</maxHistory>
+	</rollingPolicy>
+	<encoder>
+		<pattern>${log.pattern}</pattern>
+	</encoder>
+	<!-- 定义过滤器，过滤不是debuglevel的日志文件 -->
+	<filter class="ch.qos.logback.classic.filter.LevelFilter">
+		<level>INFO</level>
+		<!-- 如果是debug日志信息则留下来 -->
+		<onMatch>ACCEPT</onMatch>
+		<!-- 如果不是日志信息则直接过滤掉 -->
+		<onMismatch>DENY</onMismatch>
+	</filter>
+	</appender>
+	
+	<!-- ERROR-->
+	<!-- 日志级别 -->
+	<appender name="errorAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+	<!-- 标明文件路径 -->
+	<file>${log.filePath}/error.log</file>
+	<!-- 滚动策略 -->
+	<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+		<!-- 设置文件名称生成格式 --> 
+		<fileNamePattern>${log.filePath}/error/error.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+	<!-- 文件最大保存历史数量-->
+	<maxHistory>${log.maxHistory}</maxHistory>
+	</rollingPolicy>
+	<encoder>
+		<pattern>${log.pattern}</pattern>
+	</encoder>
+	<!-- 定义过滤器，过滤不是debuglevel的日志文件 -->
+	<filter class="ch.qos.logback.classic.filter.LevelFilter">
+		<level>ERROR</level>
+		<!-- 如果是debug日志信息则留下来 -->
+		<onMatch>ACCEPT</onMatch>
+		<!-- 如果不是日志信息则直接过滤掉 -->
+		<onMismatch>DENY</onMismatch>
+	</filter>
+	</appender>
+	
+	<!-- logger作为日志的记录器，主要用于存放日志对象，定义日志的级别和类型 -->
+	<logger name="com.imooc.o2o" level="${log.level}" additivity="true">
+	<!-- 绑定三个日志输出文件 -->
+		<appender-ref ref="debugAppender"/>
+		<appender-ref ref="infoAppender"/>
+		<appender-ref ref="errorAppender"/>
+	</logger>
+	<!-- 跟root相关的信息，打印到控制台 -->
+	<root level="info">
+		<appender-ref ref="consoleAppender"/>
+	</root>
+</configuration>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 更改web版本步骤 1.找到项目目录E:\自学网\java\project_1.Campus e-commerce project\o2o 
+	2.找到项目目录下的.setting文件夹下的org.eclipse.wst.common.project.facet.core.xml文件 3.更改xml文件中的版本，将2.3更改为3.1<installed 
+	facet="jst.web" version="3.1"/> 当我们web版本更改为3.1版本要加上头部声明，如下 -->
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                      http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+	version="3.1" metadata-complete="true">
+	<display-name>Archetype Created Web Application</display-name>
+
+	<!-- 指定项目默认访问的页面文件,输入端口号加项目名可直接进行访问页面 -->
+	<welcome-file-list>
+		<welcome-file>index.jsp</welcome-file>
+	</welcome-file-list>
+	
+	<!-- 添加kaptcha验证码web支持 -->
+	<servlet>
+		<servlet-name>kaptcha</servlet-name>
+		<servlet-class>com.google.code.kaptcha.servlet.KaptchaServlet</servlet-class>
+		<!-- 定义kaptcha验证码样式 -->
+		<!-- 是否有边框 -->
+		<init-param>
+			<param-name>kaptcha.border</param-name>
+			<param-value>no</param-value>
+		</init-param>
+		<!-- 字体颜色 -->
+		<init-param>
+			<param-name>kaptcha.textproducer.font.color</param-name>
+			<param-value>red</param-value>
+		</init-param>
+		<!-- 图片宽度 -->
+		<init-param>
+			<param-name>kaptcha.image.width</param-name>
+			<param-value>135</param-value>
+		</init-param>
+		<!-- 使用哪些字符生成验证码 -->
+		<init-param>
+			<param-name>kaptcha.textproducer.char.string</param-name>
+			<param-value>ACDEFHKPRSTWX34569</param-value>
+		</init-param>
+		<!-- 图片高度 -->
+		<init-param>
+			<param-name>kaptcha.image.height</param-name>
+			<param-value>50</param-value>
+		</init-param>
+		<!-- 字体大小 -->
+		<init-param>
+			<param-name>kaptcha.textproducer.font.size</param-name>
+			<param-value>43</param-value>
+		</init-param>
+		<!-- 干扰线颜色 -->
+		<init-param>
+			<param-name>kaptcha.noise.color</param-name>
+			<param-value>black</param-value>
+		</init-param>
+		<!-- 验证码字符个数 -->
+		<init-param>
+			<param-name>kaptcha.textproducer.char.length</param-name>
+			<param-value>4</param-value>
+		</init-param>
+		<!-- 采用宋体 -->
+		<init-param>
+			<param-name>kaptcha.textproducer.font.names</param-name>
+			<param-value>Arial</param-value>
+		</init-param>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>kaptcha</servlet-name>
+		<url-pattern>/kaptcha</url-pattern>
+	</servlet-mapping>
+
+
+	<!-- 将所有spring配置文件整合在一起 ，将所有请求都交予servlet处理 -->
+	<servlet>
+		<servlet-name>spring-dispatcher</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<!-- 将所有spring配置文件整合在一起，这样配置文件之间可以互相配合使用 -->
+		<!-- 初始化spring文件下的所有以spring开头的相关配置 文件 -->
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:spring/spring-*.xml</param-value>
+		</init-param>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>spring-dispatcher</servlet-name>
+		<!-- 默认匹配所有的请求 -->
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+
+</web-app>

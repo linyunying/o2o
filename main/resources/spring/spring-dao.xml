@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"	
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx.xsd">
+		
+		
+		<!-- 配置整合mybatis过程 -->
+		
+		<!-- 通过spring框架完成mybatis框架对数据库的操作
+		详情见mybatis笔记的基础自动回复中:1-2通过mybatis配置文件获取数据库连接
+			mybatis框架读取数据库并打开数据库会话步骤如下：
+			
+			1)、通过配置文件获取数据连接相关信息
+			2)、通过配置信息构建SqlSessionFactory
+			3)、通过SqlSessionFactory打开数据库会话
+			//1.通过配置文件获取数据库连接信息
+			//配置文件路径：包名+类名
+			//不能包含.全部将.改成/
+		Reader reader=Resources.getResourceAsReader("com/imooc/mybatisconfig/Configuration.xml");
+		//2.通过配置信息构建一个SqlSessionFactory
+		SqlSessionFactory sqlSessionFactory=new SqlSessionFactoryBuilder().build(reader);
+		//3.通过SqlSessionFactory打开数据库会话
+		SqlSession sqlSession=sqlSessionFactory.openSession();
+		 -->
+		
+		
+		<!-- 		
+			1)、通过配置文件获取数据连接相关信息 
+		-->
+		<!-- 读取该项目路径下的jdbc.properties文件（该文件中包含访问数据库的路径，账户，密码等） -->
+		
+		<!-- 1.配置数据库相关参数properties的属性：${url} -->
+		<!-- 已经对数据库的用户名和密码进行DES加密。所以现在不能直接进行访问，必须进行解密 -->
+	<!--  
+	 	<context:property-placeholder location="classpath:jdbc.properties"/>
+	 	<context:property-placeholder location="classpath:redis.properties"/>
+		-->
+		 
+		 <bean class="com.imooc.o2o.util.EncryptPropertyPlaceholderConfigurer">
+			<property name="locations">
+			<list>
+				<value>classpath:jdbc2.properties</value>
+				<!-- <value>classpath:jdbc.properties</value> -->
+			 <value>classpath:redis.properties</value>
+			</list>
+			</property>
+			<property name="fileEncoding"  value="UTF-8"/>
+			
+		</bean>
+	
+		
+		<!-- 2.数据库连接池 -->
+		<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+			<!-- 连接数据库 -->
+		<property name="driverClass" value="${jdbc.driver}"/>
+		<property name="jdbcUrl" value="${jdbc.url}"/>
+		<property name="user" value="${jdbc.username}"/>
+		<property name="password" value="${jdbc.password}"/>
+		
+		<!-- c3p0连接池的私有属性 -->
+		<property name="maxPoolSize" value="30"/>
+		<property name="minPoolSize" value="10"/>
+		<!-- 关闭连接后不自动提交commit -->
+		<property name="autoCommitOnClose" value="false"/>
+		<!-- 获取连接超时时间 -->
+		<property name="checkoutTimeout" value="10000"/>
+		<!-- 当获取链接失败重试次数 -->
+		<property name="acquireRetryAttempts" value="2"/>
+		</bean>
+		
+		
+		<!-- 
+			2)、通过配置信息构建SqlSessionFactory
+		 -->
+		<!-- 3.配置SqlSessionFactory对象 -->
+		<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 注入数据库连接池,注入上方的数据库bean对象 -->
+		<property name="dataSource" ref="dataSource"/>
+		<!-- 配置mybatis全局配置文件：mybatis-config.xml -->
+		<property name="configLocation" value="classpath:mybatis-config.xml"/>
+		<!-- 扫描entity包，使用别名 -->
+		<property name="typeAliasesPackage" value="com.imooc.o2o.entity"/>
+		<!-- 扫描sql配置文件：mapper需要的xml文件 -->
+		<property name="mapperLocations" value="classpath:mapper/*.xml"/>
+		</bean>
+		
+		<!-- 
+		以下配置是为实现如下java代码
+			3)、通过SqlSessionFactory执行sql语句
+			//messageList=sqlSession.selectList("Message.getListDao",message);
+			 //使用接口形式代替上方以传参的方法操作配置文件
+			IMessage iMessage=sqlSession.getMapper(IMessage.class);
+			
+		 -->
+		 
+		 <!-- 4.配置扫描Dao接口包，动态实现Dao接口，注入到spring容器中 -->
+		 <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		 	<!-- 注入SqlSessionFactory -->
+		 	<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+		 
+		 	<!-- 给出需要扫描Dao接口包,自动创建bean对象
+		 	List<Message> messageList=iMessage.getListDao(); -->
+		 	<property name="basePackage" value="com.imooc.o2o.dao"/>
+		 </bean>
+		</beans>
+		

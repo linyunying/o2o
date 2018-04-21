@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    <!--执行sql语句插入操作 -->
+    <!-- 执行代理的ShopDao接口  -->
+    
+    <mapper namespace="com.imooc.o2o.dao.ShopDao" >
+	<!-- 将数据库表数据复制到对应的实体类属性当中 -->
+	
+    <resultMap type="com.imooc.o2o.entity.Shop" id="shopMap">
+    	<id column="shop_id" property="shopId"/>
+    	<result column="shop_name" property="shopName"/>
+    	<result column="shop_desc" property="shopDesc"/>
+    	<result column="shop_addr" property="shopAddr"/>
+    	<result column="phone" property="phone"/>
+    	<result column="shop_img" property="shopImg"/>
+    	<result column="priority" property="priority"/>
+    	<result column="create_time" property="createTime"/>
+    	<result column="last_edit_time" property="lastEditTime"/>
+    	<result column="enable_status" property="enableStatus"/>
+    	<result column="advice" property="advice"/>
+    	<!-- 因为shop实体类中area属性对应的是Area实体类，所以需要采用复合型取出Area实体类所对应的名称 -->
+    	<association property="area" column="area_id" 
+    	javaType="com.imooc.o2o.entity.Area">
+    		<id column="area_id" property="areaId"/>
+    		<result column="area_name" property="areaName"/>
+    	</association>
+    	
+    	<association property="shopCategory" column="shop_category_id" 
+    	javaType="com.imooc.o2o.entity.ShopCategory">
+    		<id column="shop_category_id" property="shopCategoryId"/>
+    		<result column="shop_category_name" property="shopCategoryName"/>
+    	</association>
+    	
+    	<association property="owner" column="owner_id" javaType="com.imooc.o2o.entity.PersonInfo">
+    		<id column="user_id" property="userId"/>
+    		<result column="name" property="name"/>
+    	</association>
+    </resultMap>
+    
+    <!-- 根据条件查询所有店铺 -->
+    <select id="queryShopList" resultMap="shopMap">
+    	SELECT 
+    	s.shop_id,			s.shop_name,			s.shop_desc,
+    	s.shop_addr,		s.phone,shop_img,		s.priority,
+    	s.create_time,		s.last_edit_time,		s.enable_status,
+    	s.advice,			a.area_id,				a.area_name,
+    	sc.shop_category_id,						sc.shop_category_name
+    	FROM
+    	tb_shop s,	tb_area a,	tb_shop_category sc
+    	
+    	<where>
+    	<!-- 如果if条件语句才添加动态拼接SQL语句 -->
+    	<!-- 如果用户输入商铺列表进行查询则追加根据商铺列表进行查询的SQL语句 -->
+    		<if test="shopCondition.shopCategory!=null and 
+    		shopCondition.shopCategory.shopCategoryId!=null">
+    		and s.shop_category_id=#{shopCondition.shopCategory.shopCategoryId}
+    		</if>
+    		<!-- 依据parentId查询商品信息 -->
+    		<if test="shopCondition.shopCategory!=null
+    		and shopCondition.shopCategory.parent!=null
+    		and shopCondition.shopCategory.parent.shopCategoryId!=null">
+    		and s.shop_category_id in (select shop_category_id from tb_shop_category 
+    		WHERE parent_id=#{shopCondition.shopCategory.parent.shopCategoryId})
+ 
+    		</if>
+    		
+    		<!-- 如果用户根据区域进行查询店铺，则追加对应的SQL语句 -->
+    		<if test="shopCondition.area!=null and 
+    		shopCondition.area.areaId!=null">
+    		and s.area_id=#{shopCondition.area.areaId}
+    		</if>
+    		<!-- 根据店铺名称查询（支持模糊查询） -->
+    		<if test="shopCondition.shopName!=null">
+    			and s.shop_name like '%${shopCondition.shopName}%'
+    		</if>
+    		
+    		<!-- 根据店铺状态查询 -->
+    		<if test="shopCondition.enableStatus!=null">
+    			and s.enable_status=#{shopCondition.enableStatus}
+    		</if>
+    		
+    		<!-- 根据用户信息查询该用户所有店铺，用户信息是从session对象中获取 -->
+    		<if test="shopCondition.owner!=null and shopCondition.owner.userId!=null">
+    			and s.owner_id=${shopCondition.owner.userId}
+    		</if>
+    		<!-- 建立多表查询连接 -->
+    		AND 
+    		s.area_id=a.area_id
+    		AND
+    		s.shop_category_id=sc.shop_category_id
+    	</where>
+
+		<!-- 按照权重降序 -->
+    	ORDER BY
+    	s.priority DESC
+    	 <!-- 加入分页功能 -->
+    	 <!-- rowIndex：从第几行开始取数据
+			    就是比如limit 0,5 则是从第0条开始，当前页显示出五条商铺信息。
+			  limit 5,6则第二页是从第五条开始显示，当前页显示六条商铺信息。
+	          pageSize：返回的条数，就是当前页可以显示出几条商铺信息
+	     -->
+    	 LIMIT #{rowIndex},#{pageSize};
+    </select>
+    
+    <!-- 获取查询出来的店铺总数,因为我们上面支持了分页查询，但是我们分页的时候需要知道查询出来的商铺信息的总数再进行分页-->
+    <select id="queryShopCount" resultType="int">
+    	SELECT
+
+    	count(1)
+    
+    	FROM
+    	tb_shop s,	tb_area a,	tb_shop_category sc
+    	
+    	<where>
+    	<!-- 如果if条件语句才添加动态拼接SQL语句 -->
+    	<!-- 如果用户输入商铺列表进行查询则追加根据商铺列表进行查询的SQL语句 -->
+    		<if test="shopCondition.shopCategory!=null and 
+    		shopCondition.shopCategory.shopCategoryId!=null">
+    		and s.shop_category_id=#{shopCondition.shopCategory.shopCategoryId}
+    		</if>
+    		
+    		<!-- 依据parentId查询商品信息 -->
+    		<if test="shopCondition.shopCategory!=null
+    		and shopCondition.shopCategory.parent!=null
+    		and shopCondition.shopCategory.parent.shopCategoryId!=null">
+    		and s.shop_category_id in (select shop_category_id from tb_shop_category 
+    		WHERE parent_id=#{shopCondition.shopCategory.parent.shopCategoryId})
+ 
+    		</if>
+    		
+    		<!-- 如果用户根据区域进行查询店铺，则追加对应的SQL语句 -->
+    		<if test="shopCondition.area!=null and 
+    		shopCondition.area.areaId!=null">
+    		and s.area_id=#{shopCondition.area.areaId}
+    		</if>
+    		<!-- 根据店铺名称查询（支持模糊查询） -->
+    		<if test="shopCondition.shopName!=null">
+    			and s.shop_name= like '%${shopCondition.shopName}%'
+    		</if>
+    		
+    		<!-- 根据店铺状态查询 -->
+    		<if test="shopCondition.enableStatus!=null">
+    			and s.enable_status=#{shopCondition.enableStatus}
+    		</if>
+    		
+    		<!-- 根据用户信息查询该用户所有店铺，用户信息是从session对象中获取 -->
+    		<if test="shopCondition.owner!=null and shopCondition.owner.userId!=null">
+    			and s.owner_id=${shopCondition.owner.userId}
+    		</if>
+    		<!-- 建立多表查询连接 -->
+    		AND 
+    		s.area_id=a.area_id
+    		AND
+    		s.shop_category_id=sc.shop_category_id
+    	</where>
+    	
+    </select>
+  
+  <!-- 根据店铺id查询店铺信息 -->
+    <select id="queryByShopId" resultMap="shopMap" parameterType="Long" >
+    	SELECT 
+    	s.shop_id,			s.shop_name,			s.shop_desc,
+    	s.shop_addr,		s.phone,shop_img,		s.priority,
+    	s.create_time,		s.last_edit_time,		s.enable_status,
+    	<!-- 之所以需要多表连接进行查询，
+    	是因为我们查询数据库中的商铺表的时候，区域表是以id值跟shop表进行连接的，
+    	当我们想要在查询tb_shop表的时候显示区域名称则必须 进行多表连接查询，根据存储在shop表中的area_id获取区域名称
+    	其余同理-->
+    	s.advice,			a.area_id,				a.area_name,
+    	sc.shop_category_id,						sc.shop_category_name
+    	FROM
+    	tb_shop s,	tb_area a,	tb_shop_category sc
+    	WHERE
+    	s.area_id=a.area_id
+    	AND
+    	s.shop_category_id=sc.shop_category_id	
+    	AND
+    	s.shop_id=#{shopId}
+    	
+    </select>
+    
+    
+    
+    	<!--执行sql语句 -->
+    	<!-- useGeneratedKeys表示当前主键id为自增长模式 -->
+    	<!--keyColumn为数据库主键  -->
+    	<!-- 将数据库主键值自动赋值到shop实体类中的shopId属性 -->
+    	<!--parameterType传入的参数类型  -->
+    	<!-- 不加parameterType属性也行，这个属性是可选的，因为 MyBatis 可以通过 TypeHandler 推断出具体传入语句的参数 。
+    		但是最好加上parameterType属性，因为这样可以提高代码的可读性
+    			-->
+    	<insert id="insertShop" useGeneratedKeys="true" keyColumn="shop_id" keyProperty="shopId" parameterType="com.imooc.o2o.entity.Shop">
+    		INSERT INTO
+    		tb_shop(owner_id,area_id,shop_category_id,
+    		shop_name,shop_desc,shop_addr,phone,shop_img,priority,create_time,last_edit_time,enable_status,advice)
+    		
+    		<!-- 将shop实体类中的成员变量属性值插入到数据库当中，前面三个是另外三个实体类的id,采用的是OGNL表达式，详情见mybatis基础版的笔记 -->
+    		VALUES(#{owner.userId},#{area.areaId},#{shopCategory.shopCategoryId},
+    		#{shopName},#{shopDesc},#{shopAddr},#{phone},#{shopImg},#{priority},#{createTime},#{lastEditTime},#{enableStatus},#{advice})
+    	</insert>
+    	
+    	<!-- 执行sql语句update -->
+    	<!-- 更新店铺信息 -->
+    	<!--parameterType传入的参数类型  -->
+    	<update id="updateShop" parameterType="com.imooc.o2o.entity.Shop">
+    		<!-- update的sql语句update renwu set gongzi=gongzi*1.02 where gongzi<5000 -->
+    		UPDATE tb_shop
+    		<set>
+    		<!-- 拼接sql语句，如果不是最后一句就要在后面添加, -->
+    			<if test="shopName!=null">shop_name=#{shopName},</if>
+    			<if test="shopDesc!=null">shop_desc=#{shopDesc},</if>
+    			<if test="shopAddr!=null">shop_addr=#{shopAddr},</if>
+    			<if test="phone!=null">phone=#{phone},</if>
+    			<if test="shopImg!=null">shop_img=#{shopImg},</if>
+    			<if test="priority!=null">priority=#{priority},</if>
+    			<if test="lastEditTime!=null">last_edit_time=#{lastEditTime},</if>
+    			<if test="enableStatus!=null">enable_status=#{enableStatus},</if>
+    			<if test="advice!=null">advice=#{advice},</if>
+    			<if test="area!=null">area_id=#{area.areaId},</if>
+    			<if test="shopCategory!=null">shop_category_id=#{shopCategory.shopCategoryId}</if>
+    		</set>
+    		<!-- 当shop实体类中的id与数据库中的表id一致才能更改数据库信息 -->
+    		where shop_id=#{shopId}
+    	
+    	</update>
+    </mapper>

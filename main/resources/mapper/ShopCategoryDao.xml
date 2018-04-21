@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    <!-- 执行sql语句查询操作 -->
+    
+    <!-- 执行ShopCategoryDao接口，下方是执行抽象方法，返回类型是ShopCategory类 -->
+<mapper namespace="com.imooc.o2o.dao.ShopCategoryDao">
+	<!-- 执行查询语句,查询区域实体类 按照权重降序排列-->
+	<!-- 执行ShopCategoryDao接口的抽象方法，id属性值与接口中的抽象方法名一致，返回ShopCategory类型 -->
+	<select id="queryShopCategory" resultType="com.imooc.o2o.entity.ShopCategory">
+		SELECT 
+		shop_category_id,
+		shop_category_name,
+		shop_category_desc,
+		shop_category_img,
+		priority,
+		create_time,
+		last_edit_time,
+		parent_id
+		FROM 
+		tb_shop_category
+		<where>
+
+		<!-- 父级元素Id为空 -->
+		<if test="shopCategoryCondtion==null">
+			and parent_id is null
+		</if>
+
+		<!-- 查询父级元素id不为空的情况 --> 
+		<if test="shopCategoryCondtion!=null">
+				and parent_id is not null
+			</if>
+
+		<!-- 如果父元素商铺类别不为空，则从查询特定的parent下的子id -->
+			<if test="shopCategoryCondtion!=null and shopCategoryCondtion.parent!=null">
+				and parent_id=#{shopCategoryCondtion.parent.shopCategoryId}
+			</if>
+		</where>
+		ORDER BY  
+		priority DESC
+	</select>
+
+</mapper>
